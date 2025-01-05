@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Profile Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7fc;
+        }
+
+        .profile-card {
+            background-color: #ffffff;
+            width: 350px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .profile-card:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-card img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .profile-card h2 {
+            font-size: 22px;
+            font-weight: 500;
+            margin: 15px 0;
+            color: #333;
+        }
+
+        .profile-card p {
+            margin: 8px 0;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .profile-card p b {
+            color: #333;
+        }
+
+        .profile-card button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #0073e6;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .profile-card button:hover {
+            background-color: #005bb5;
+        }
+
+        .profile-card .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .profile-card .info-value {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .profile-card .logout {
+            font-size: 14px;
+            margin-top: 10px;
+            color: #0073e6;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .profile-card .logout:hover {
+            color: #005bb5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="profile-card">
+        <img id="profileImage" alt="Profile picture" src="https://storage.googleapis.com/a1aa/image/4zYuDP2Y7RpmHRzheG71zfdLewJ8oQyc8rV5SG2BDYlEanDoA.jpg" />
+        <p class="info-label">Name:</p>
+        <p class="info-value" id="fullName">Loading...</p>
+        <p class="info-label">Username:</p>
+        <p class="info-value" id="userUsername">Loading...</p>
+        <p class="info-label">Skills:</p>
+        <p class="info-value" id="userSkills">Loading...</p>
+
+        <button onclick="startChat()">Chat</button>
+        <button href="bs.html"><a href="bs.html">Book SESSION</a></button>
+
+<script>
+    // Function to navigate to the chat page
+    function startChat() {
+        const chatPageUrl = `chat.html?username=${username}`;
+        window.location.href = chatPageUrl;
+    }
+</script>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAirrPmlPNle9X2oW1Ey1nToSz_yQ858Jc",
+            authDomain: "skillbridge-7ed6a.firebaseapp.com",
+            databaseURL: "https://skillbridge-7ed6a-default-rtdb.firebaseio.com",
+            projectId: "skillbridge-7ed6a",
+            storageBucket: "skillbridge-7ed6a.firebasestorage.app",
+            messagingSenderId: "501814309103",
+            appId: "1:501814309103:web:1f58358acaf9bc3c77eb1a"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Reference to HTML elements
+        const fullNameElement = document.getElementById('fullName');
+        const usernameElement = document.getElementById('userUsername');
+        const skillsElement = document.getElementById('userSkills');
+        const profileImageElement = document.getElementById('profileImage');
+
+        // Get the 'username' parameter from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('username');
+
+        // Function to get user profile by username
+        function getUserProfile() {
+            if (username) {
+                // Fetch user profile data from the Realtime Database (users section)
+                firebase.database().ref('users').orderByChild('username').equalTo(username).once('value').then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        const user = Object.values(userData)[0];
+
+                        // Update the profile card with user data
+                        fullNameElement.textContent = user.name || 'No name available';
+                        usernameElement.textContent = user.username || 'No username available';
+                        profileImageElement.src = user.profileImage || 'https://storage.googleapis.com/a1aa/image/4zYuDP2Y7RpmHRzheG71zfdLewJ8oQyc8rV5SG2BDYlEanDoA.jpg';
+
+                        // Fetch skills for this user
+                        firebase.database().ref('skills').orderByChild('username').equalTo(username).once('value').then((skillsSnapshot) => {
+                            const skillsData = skillsSnapshot.val();
+                            if (skillsData) {
+                                const skillsList = Object.values(skillsData).map(skill => `${skill.name} (${skill.type})`).join('<br />');
+                                skillsElement.innerHTML = skillsList;
+                            } else {
+                                skillsElement.textContent = 'No skills listed';
+                            }
+                        });
+                    }
+                }).catch((error) => {
+                    console.error('Error fetching user data:', error);
+                });
+            } else {
+                console.log('Username not found');
+                window.location.href = 'login.html';  // Redirect to login if no username is found
+            }
+        }
+
+        // Call the function to get user profile
+        getUserProfile();
+    </script>
+</body>
+</html>

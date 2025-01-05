@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f4f7fc;
+        }
+
+        .header {
+            background-color: #333;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .message-list {
+            margin: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .message-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">Inbox</div>
+    <div class="message-list" id="messageList">
+        <!-- Messages will be dynamically loaded here -->
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAirrPmlPNle9X2oW1Ey1nToSz_yQ858Jc",
+            authDomain: "skillbridge-7ed6a.firebaseapp.com",
+            databaseURL: "https://skillbridge-7ed6a-default-rtdb.firebaseio.com",
+            projectId: "skillbridge-7ed6a",
+            storageBucket: "skillbridge-7ed6a.firebasestorage.app",
+            messagingSenderId: "501814309103",
+            appId: "1:501814309103:web:1f58358acaf9bc3c77eb1a"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const messageListElement = document.getElementById('messageList');
+
+        // Function to load messages for the current user
+        function loadMessages(currentUser ) {
+            firebase.database().ref('chats').orderByChild('participants').equalTo(currentUser ).once('value')
+                .then(snapshot => {
+                    const chats = snapshot.val();
+                    messageListElement.innerHTML = ''; // Clear existing list
+
+                    if (chats) {
+                        const chatIds = Object.keys(chats);
+
+                        // Loop through each chat and display it
+                        chatIds.forEach(chatId => {
+                            const chat = chats[chatId];
+                            const participants = chat.participants.split(',').map(user => user.trim());
+
+                            // Find the other participant (not current user)
+                            const otherUser  = participants.find(user => user !== currentUser );
+
+                            // Get the latest message from the chat (if any)
+                            const messages = chat.messages || {};
+                            const lastMessage = Object.values(messages).pop();
+
+                            // Create message item element
+                            const messageItemElement = document.createElement('div');
+                            messageItemElement.classList.add('message-item');
+                            messageItemElement.onclick = () => openChatPage(chatId, otherUser );
+
+                            // Message item content
+                            const lastMessageText = lastMessage ? lastMessage.text : 'No messages yet';
+
+                            messageItemElement.innerHTML = `
+                                <strong>${otherUser }</strong><br>
+                                <em>${lastMessageText}</em>
+                            `;
+
+                            messageListElement.appendChild(messageItemElement);
+                        });
+                    } else {
+                        messageListElement.innerHTML = '<p>No messages found.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                    messageListElement.innerHTML = '<p>Error loading messages. Please try again later.</p>';
+                });
+        }
+
+        // Check if user is authenticated
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                const currentUser  = user.displayName; // Assuming displayName is set
+                loadMessages(currentUser );
+            } else {
+                messageListElement.innerHTML = '<p>Please log in to see your messages.</p>';
+            }
+        });
+
+        // Open chat page for the selected chat
+        function openChatPage(chatId, otherUser ) {
+            window.location.href = `chat.html?username=${otherUser }`;
+        }
+    </script>
+
+</body>
+</html>

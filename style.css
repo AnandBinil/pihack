@@ -1,0 +1,84 @@
+/* General Body Styling */
+body {
+    background-color: #f0f8ff; /* Light background color */
+    font-family: 'Arial', sans-serif; /* Modern font */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full viewport height */
+    margin: 0;
+  }
+  
+  /* Centered container */
+  .container {
+    background-color: #fff8e1; /* Soft background for form */
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow around the form */
+    width: 100%;
+    max-width: 400px; /* Maximum width for the form */
+    text-align: center;
+  }
+  
+  /* Heading */
+  h1 {
+    color: #e57373; /* A soft red color */
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  
+  /* Form Group styling */
+  .form-group {
+    margin-bottom: 20px; /* Space between form fields */
+    text-align: left;
+  }
+  
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+  }
+  
+  .form-group input:focus {
+    border-color: #e57373; /* Highlight border on focus */
+    outline: none;
+  }
+  
+  /* Button Styling */
+  button {
+    background-color: #e57373; /* Soft red color for the button */
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    width: 100%; /* Make button take the full width */
+    margin-top: 10px;
+  }
+  
+  button:hover {
+    background-color: #d32f2f; /* Darker red on hover */
+  }
+  
+  /* Responsive Design: Ensure it's mobile-friendly */
+  @media screen and (max-width: 600px) {
+    .container {
+      width: 90%;
+      padding: 20px;
+    }
+  
+    h1 {
+      font-size: 1.8em;
+    }
+  }
+  

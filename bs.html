@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Session</title>
+    <!-- Google Fonts for better typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f7f8fa;
+        }
+
+        /* Container Styling */
+        .container {
+            background: linear-gradient(135deg, #f3f4f6, #dbe3e8);
+            border-radius: 15px;
+            padding: 40px;
+            width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        .container h2 {
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Input Fields */
+        .container input[type="date"], .container input[type="time"], .container input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .container input[type="date"]:focus, .container input[type="time"]:focus, .container input[type="text"]:focus {
+            border-color: #0073e6;
+            outline: none;
+        }
+
+        /* Button Styles */
+        .container button {
+            background-color: #0073e6;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+
+        .container button:hover {
+            background-color: #005bb5;
+        }
+
+        .container button:active {
+            background-color: #003f7f;
+        }
+
+        /* Placeholder Styling */
+        .container input::placeholder {
+            color: #bbb;
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                width: 90%;
+                padding: 30px;
+            }
+
+            .container h2 {
+                font-size: 22px;
+            }
+        }
+
+        /* Message container styling */
+        .message {
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Book Your Session</h2>
+        <!-- Input Fields for Booking -->
+        <input type="text" id="profileUsername" placeholder="Enter the profile username you want to book" />
+        <input type="date" id="bookingDate" placeholder="Select Date">
+        <input type="time" id="bookingTime" placeholder="Select Time">
+        <button id="submitBooking">Confirm Booking</button>
+
+        <!-- Message container for success/error -->
+        <div id="messageContainer" class="message"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-auth.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAirrPmlPNle9X2oW1Ey1nToSz_yQ858Jc",
+            authDomain: "skillbridge-7ed6a.firebaseapp.com",
+            databaseURL: "https://skillbridge-7ed6a-default-rtdb.firebaseio.com",
+            projectId: "skillbridge-7ed6a",
+            storageBucket: "skillbridge-7ed6a.firebasestorage.app",
+            messagingSenderId: "501814309103",
+            appId: "1:501814309103:web:1f58358acaf9bc3c77eb1a"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Get Firebase Authentication instance
+        const auth = firebase.auth();
+
+        // Get a reference to the database service
+        const database = firebase.database();
+
+        // Get references to form elements
+        const profileUsernameInput = document.getElementById('profileUsername');
+        const bookingDateInput = document.getElementById('bookingDate');
+        const bookingTimeInput = document.getElementById('bookingTime');
+        const submitBookingButton = document.getElementById('submitBooking');
+        const messageContainer = document.getElementById('messageContainer'); // Message container
+
+        // Add event listener to the submit button
+        submitBookingButton.addEventListener('click', (event) => {
+            event.preventDefault();  // Prevent form submission (in case the user presses enter)
+
+            // Get values from form inputs
+            const profileUsername = profileUsernameInput.value.trim();
+            const bookingDate = bookingDateInput.value;
+            const bookingTime = bookingTimeInput.value;
+
+            // Validate input
+            if (profileUsername === '' || bookingDate === '' || bookingTime === '') {
+                showMessage('error', 'Please fill in all fields.');
+                return;
+            }
+
+            // Get current user's UID (user ID)
+            const user = auth.currentUser;
+            if (!user) {
+                showMessage('error', 'You must be logged in to book a session.');
+                return;
+            }
+
+            // Fetch the username of the current user
+            const userRef = database.ref('users/' + user.uid);
+            userRef.once('value')
+                .then((snapshot) => {
+                    const userData = snapshot.val();
+                    const userName = userData ? userData.username : 'Anonymous'; // Default to 'Anonymous' if no username is found
+
+                    // Create a new booking object including the username of the profile being booked
+                    const newBooking = {
+                        profileUsername: profileUsername, // The username of the profile being booked
+                        date: bookingDate,
+                        time: bookingTime,
+                        username: userName,  // Add the logged-in user's username
+                        userId: user.uid     // Store user ID as well, if needed for further reference
+                    };
+
+                    // Push the new booking to the database
+                    database.ref('bookings').push(newBooking)
+                        .then(() => {
+                            // Clear form inputs
+                            profileUsernameInput.value = '';
+                            bookingDateInput.value = '';
+                            bookingTimeInput.value = '';
+
+                            // Display success message
+                            showMessage('success', 'Booking confirmed!');
+                        })
+                        .catch((error) => {
+                            console.error('Error adding booking:', error);
+                            showMessage('error', 'Error confirming booking. Please try again.');
+                        });
+                })
+                .catch((error) => {
+                    console.error('Error fetching username:', error);
+                    showMessage('error', 'Error fetching username. Please try again.');
+                });
+        });
+
+        // Function to display success or error message
+        // Send a new message
+function sendMessage() {
+    const messageText = messageInput.value.trim();
+    if (messageText === '') return;
+
+    // Get or create chat between the current user and the target user
+    firebase.database().ref('chats').orderByChild('participants').equalTo(`${currentUser},${targetUsername}`).once('value')
+        .then(snapshot => {
+            let chatId;
+            if (snapshot.exists()) {
+                chatId = Object.keys(snapshot.val())[0];
+            } else {
+                chatId = createNewChat();
+            }
+
+            // Save the message to Firebase
+            const newMessage = {
+                sender: currentUser,
+                text: messageText,
+                timestamp: Date.now()
+            };
+
+            // Make sure the chatId is valid
+            firebase.database().ref('chats/' + chatId + '/messages').push(newMessage)
+                .then(() => {
+                    messageInput.value = '';  // Clear input field
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                });
+        })
+        .catch(error => {
+            console.error('Error checking chat:', error);
+        });
+}
+
+    </script>
+</body>
+</html>
